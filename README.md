@@ -1,7 +1,8 @@
 # TikTok Downloader (CEP / Premiere Pro macOS)
 
 Painel que cola um link do TikTok, baixa com `yt-dlp` na pasta `Downloads_TikTok/`
-ao lado do `.prproj`, importa para o bin **TikTok** e insere no playhead (V1 + A1).
+ao lado do `.prproj`, importa para o bin **TikTok**, insere no playhead (V1 + A1) e
+extrai a música do próprio vídeo em `.wav` (48 kHz, estéreo) na mesma pasta.
 
 ## Estrutura
 
@@ -9,8 +10,11 @@ ao lado do `.prproj`, importa para o bin **TikTok** e insere no playhead (V1 + A
 TikTokDownloader/
 ├── CSXS/manifest.xml   # manifest CEP (PPRO 14+, Node habilitado)
 ├── index.html          # UI do painel
-├── js/main.js          # CEP/Node: valida link, chama yt-dlp, mostra progresso
+├── js/main.js          # CEP/Node: valida link, chama yt-dlp/ffmpeg, progresso
+├── js/update.js        # auto-update (version.json + zip do GitHub Releases)
 ├── jsx/host.jsx        # ExtendScript: projeto, importFiles, overwriteClip
+├── publicar.sh         # publica uma versão: bump + pacotes + release no GitHub
+├── hosting.txt         # URL base de onde o painel busca atualização
 └── install.sh          # copia para CEP/extensions + PlayerDebugMode
 ```
 
@@ -39,7 +43,16 @@ O script já faz:
      indexada pelo caminho do `.prproj`.
 3. Abra uma sequência (precisa de sequência ativa e trilha V1 desbloqueada).
 4. Cole o link, posicione o playhead, clique em **Baixar e inserir na timeline**.
-5. Vídeo privado/sua conta: marque *Ler do navegador* ou use *arquivo cookies.txt*.
+5. Ao terminar: vídeo na timeline + `id.wav` com a música na pasta de downloads.
+6. Quando sair versão nova aparece o botão **Atualizar X** no cabeçalho do painel
+   (baixa do GitHub Releases e pede para reiniciar o Premiere).
+
+## Publicar uma atualização
+
+```bash
+./publicar.sh 1.4.0     # bump + zip/pkg + version.json + release no GitHub
+bash install.sh         # atualiza a cópia local
+```
 
 ## Limitações conhecidas
 

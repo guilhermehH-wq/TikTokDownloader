@@ -285,6 +285,35 @@
     });
   }
 
+  // Extrai só o áudio do vídeo baixado (o mesmo arquivo .mp4 já tem a música).
+  function extrairAudio(ffmpeg, video) {
+    return new Promise(function (resolve) {
+      var wav = video.replace(/\.[^.\/]+$/, "") + ".wav";
+      var args = [
+        "-y",
+        "-i", video,
+        "-vn",
+        "-acodec", "pcm_s16le",
+        "-ar", "48000",
+        "-ac", "2",
+        wav
+      ];
+      var filho;
+      try {
+        filho = cp.spawn(ffmpeg, args);
+      } catch (e) {
+        return resolve(null);
+      }
+      var erro = "";
+      filho.stderr.on("data", function (d) { erro += d.toString(); });
+      filho.on("error", function () { resolve(null); });
+      filho.on("close", function (code) {
+        if (code === 0 && fs.existsSync(wav)) { return resolve(wav); }
+        resolve(null);
+      });
+    });
+  }
+
   async function executar() {
     var url = extrairUrl(elUrl.value);
     if (!url) { return setStatus("Cole o link do vídeo do TikTok primeiro.", "erro"); }
@@ -354,7 +383,16 @@
         throw new Error("O Premiere não executou o importAndInsert.\nVerifique se há uma sequência ativa e reinicie o painel.");
       }
 
-      setStatus("Pronto! Vídeo na timeline.\n" + path.basename(arquivo), "ok");
+      setStatus("Extraindo a música do vídeo...");
+      var wav = await extrairAudio(achar("ffmpeg"), arquivo);
+
+      if (wav) {
+        setStatus("Pronto! Vídeo na timeline.\n" + path.basename(arquivo) +
+          "\nMúsica: " + path.basename(wav), "ok");
+      } else {
+        setStatus("Pronto! Vídeo na timeline.\n" + path.basename(arquivo) +
+          "\n(não consegui extrair a música em .wav)", "ok");
+      }
       elUrl.value = "";
     } catch (e) {
       setStatus("Erro: " + e.message, "erro");
