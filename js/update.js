@@ -105,7 +105,9 @@
   function checar() {
     var url = urlAtualizacao();
     if (!url) { return Promise.resolve(null); }
-    return baixarTexto(url).then(function (txt) {
+    // Evita o cache do CDN do GitHub (senao o "latest" fica preso no release anterior).
+    var semCache = url + (url.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now();
+    return baixarTexto(semCache).then(function (txt) {
       var info = JSON.parse(txt);
       var atual = versaoInstalada();
       if (!info || !info.version || !info.url) { return null; }
