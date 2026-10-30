@@ -17,7 +17,7 @@
   var https = require("https");
   var cp = require("child_process");
 
-  var URL_VERSAO = "";
+  var URL_VERSAO = "https://github.com/guilhermehH-wq/TikTokDownloader/releases/latest/download/version.json";
   var CONFIG_FILE = path.join(os.homedir(), "Library", "Application Support", "TikTokDownloader", "config.json");
 
   function raizExtensao() {
@@ -60,39 +60,44 @@
     return 0;
   }
 
-  function baixar(url, destino) {
+  // GET com follow de redirect (GitHub Releases responde 302).
+  function abrir(url, saltos) {
+    if (saltos < 0) { return Promise.reject(new Error("Muitos redirecionamentos")); }
     return new Promise(function (resolve, reject) {
-      function seguir(u, saltos) {
-        https.get(u, { headers: { "User-Agent": "TikTokDownloader-CEP" } }, function (res) {
-          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && saltos > 0) {
-            res.resume();
-            return seguir(res.headers.location, saltos - 1);
-          }
-          if (res.statusCode !== 200) {
-            res.resume();
-            return reject(new Error("HTTP " + res.statusCode + " em " + u));
-          }
-          var out = fs.createWriteStream(destino);
-          res.pipe(out);
-          out.on("finish", function () { out.close(function () { resolve(destino); }); });
-          out.on("error", reject);
-        }).on("error", reject);
-      }
-      seguir(url, 5);
+      https.get(url, { headers: { "User-Agent": "TikTokDownloader-CEP" } }, function (res) {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          resolve(abrir(res.headers.location, saltos - 1));
+          return;
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error("HTTP " + res.statusCode + " em " + url));
+        }
+        resolve(res);
+      }).on("error", reject);
+    });
+  }
+
+  function baixar(url, destino) {
+    return abrir(url, 5).then(function (res) {
+      return new Promise(function (resolve, reject) {
+        var out = fs.createWriteStream(destino);
+        res.pipe(out);
+        out.on("finish", function () { out.close(function () { resolve(destino); }); });
+        out.on("error", reject);
+      });
     });
   }
 
   function baixarTexto(url) {
-    return new Promise(function (resolve, reject) {
-      https.get(url, { headers: { "User-Agent": "TikTokDownloader-CEP" } }, function (res) {
-        if (res.statusCode !== 200) {
-          res.resume();
-          return reject(new Error("HTTP " + res.statusCode));
-        }
+    return abrir(url, 5).then(function (res) {
+      return new Promise(function (resolve, reject) {
         var dados = "";
         res.on("data", function (d) { dados += d.toString(); });
         res.on("end", function () { resolve(dados); });
-      }).on("error", reject);
+        res.on("error", reject);
+      });
     });
   }
 
