@@ -167,9 +167,16 @@
     return m ? m[0].replace(/[.,;)\]]+$/, "") : "";
   }
 
+  // YouTube: só o áudio é baixado (música, trilha, referência).
+  function ehYouTube(u) {
+    if (!/^https?:\/\/(([a-z0-9-]+\.)*youtube\.com\/|youtu\.be\/)/i.test(u)) { return false; }
+    if (/youtu\.be\/[A-Za-z0-9_-]+/i.test(u)) { return true; }
+    if (/youtube\.com\/(watch\?|shorts\/|live\/|embed\/)/i.test(u)) { return true; }
+    return false;
+  }
+
   // Aceita apenas link de vídeo: /@user/video/123, /t/CODIGO, vm./vt.tiktok.com/CODIGO
-  function ehVideo(u) {
-    if (!/^https?:\/\/(([a-z0-9-]+\.)*tiktok\.com)\//i.test(u)) { return false; }
+  function ehVideo(u) {    if (!/^https?:\/\/(([a-z0-9-]+\.)*tiktok\.com)\//i.test(u)) { return false; }
     if (/\/video\/\d+/i.test(u)) { return true; }
     if (/\/photo\/\d+/i.test(u)) { return true; }
     if (/^https?:\/\/(vm|vt)\.tiktok\.com\/[A-Za-z0-9]+/i.test(u)) { return true; }
@@ -185,7 +192,10 @@
   function erroAmigavel(stderr) {
     var s = String(stderr || "");
     if (/HTTP Error 403/i.test(s)) {
-      return "O TikTok recusou o download (erro 403).\nAtualize o yt-dlp no Terminal: brew upgrade yt-dlp\ne tente de novo.";
+      return "O TikTok/YouTube recusou o download (erro 403).\nAtualize o yt-dlp no Terminal: brew upgrade yt-dlp\ne tente de novo.";
+    }
+    if (/video is unavailable|Video unavailable|Private video|removed by the uploader/i.test(s)) {
+      return "Vídeo indisponível (privado, removido ou bloqueado na sua região).\nConfira se o link abre no navegador.";
     }
     if (/login|sign in|not available in your country|private video/i.test(s)) {
       return "O TikTok pediu login para este vídeo.\nVídeos privados não são suportados neste painel.";
@@ -202,7 +212,7 @@
     return linhas.slice(-3).join("\n") || "Falha ao rodar o yt-dlp.";
   }
 
-  function baixar(ytdlp, url, pasta, onProgresso) {
+  function baixar(ytdlp, url, pasta, onProgresso, somenteAudio) {
     return new Promise(function (resolve, reject) {
       var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ttdl-"));
       var tmpFile = path.join(tmpDir, "resultado.txt");
@@ -219,6 +229,14 @@
         "--merge-output-format", "mp4",
         "-o", path.join(pasta, "%(id)s.%(ext)s")
       ];
+      if (somenteAudio) {
+        // YouTube: melhor áudio, sem vídeo. web_embedded entrega stream só de áudio;
+        // web_safari é o plano B (às vezes vem muxado, o ffmpeg separa depois).
+        args.splice(args.indexOf("-S"), 2);
+        args.splice(args.indexOf("--merge-output-format"), 2);
+        args.push("-f", "bestaudio/best");
+        args.push("--extractor-args", "youtube:player_client=web_embedded,web_safari");
+      }
       args.push(url);
 
       var env = Object.assign({}, process.env, {
@@ -253,10 +271,14 @@
         onProgresso(null);
 
         function acharPorId() {
-          var id = (url.match(/\/video\/(\d+)/) || [])[1];
+          var id = (url.match(/\/video\/(\d+)/) || url.match(/[?&]v=([A-Za-z0-9_-]+)/) || url.match(/youtu\.be\/([A-Za-z0-9_-]+)/) || [])[1];
           if (!id) { return null; }
-          var alvo = path.join(pasta, id + ".mp4");
-          return fs.existsSync(alvo) ? alvo : null;
+          var exts = somenteAudio ? [".m4a", ".webm", ".opus", ".mp3", ".wav", ".mp4"] : [".mp4"];
+          for (var i = 0; i < exts.length; i++) {
+            var alvo = path.join(pasta, id + exts[i]);
+            if (fs.existsSync(alvo)) { return alvo; }
+          }
+          return null;
         }
 
         if (code !== 0) {
@@ -316,20 +338,24 @@
 
   async function executar() {
     var url = extrairUrl(elUrl.value);
-    if (!url) { return setStatus("Cole o link do vídeo do TikTok primeiro.", "erro"); }
-    if (ehPerfilOuInicio(url)) {
-      return setStatus(
-        "Esse link é a página inicial ou um perfil, não um vídeo.\n" +
-        "Abra o vídeo, toque em Compartilhar > Copiar link e cole aqui.",
-        "erro"
-      );
-    }
-    if (!ehVideo(url)) {
-      return setStatus(
-        "Não reconheci o link como um vídeo do TikTok.\n" +
-        "Formato esperado: https://www.tiktok.com/@usuario/video/1234567890",
-        "erro"
-      );
+    if (!url) { return setStatus("Cole o link do vídeo do TikTok ou do YouTube primeiro.", "erro"); }
+    var youtube = ehYouTube(url);
+    if (!youtube) {
+      if (ehPerfilOuInicio(url)) {
+        return setStatus(
+          "Esse link é a página inicial ou um perfil, não um vídeo.\n" +
+          "Abra o vídeo, toque em Compartilhar > Copiar link e cole aqui.",
+          "erro"
+        );
+      }
+      if (!ehVideo(url)) {
+        return setStatus(
+          "Não reconheci o link como vídeo do TikTok nem como link do YouTube.\n" +
+          "TikTok: https://www.tiktok.com/@usuario/video/1234567890\n" +
+          "YouTube: https://www.youtube.com/watch?v=...",
+          "erro"
+        );
+      }
     }
 
     var ytdlp = achar("yt-dlp");
@@ -369,6 +395,29 @@
         throw new Error("Não consegui usar a pasta:\n" + pasta + "\n(" + e.message + ")");
       }
       lembrarPasta();
+
+      if (youtube) {
+        setStatus("Baixando o áudio do YouTube...");
+        var bruto = await baixar(ytdlp, url, pasta, function (pct) {
+          if (pct !== null) { setStatus("Baixando o áudio... " + Math.round(pct) + "%"); }
+          progresso(pct);
+        }, true);
+
+        setStatus("Convertendo para .wav...");
+        var wavYT = await extrairAudio(achar("ffmpeg"), bruto);
+        if (!wavYT) { throw new Error("Não consegui converter o áudio para .wav."); }
+
+        setStatus("Inserindo o áudio na timeline...");
+        var resYT = await jsx("importAudioOnly(" + JSON.stringify(wavYT) + ")");
+        if (resYT && resYT.indexOf("ERRO:") === 0) { throw new Error(resYT.substring(5)); }
+        if (!resYT || resYT === "EvalScript error.") {
+          throw new Error("O Premiere não executou o importAudioOnly.\nVerifique se há uma sequência ativa e reinicie o painel.");
+        }
+
+        setStatus("Pronto! Música na timeline (A1).\n" + path.basename(wavYT), "ok");
+        elUrl.value = "";
+        return;
+      }
 
       setStatus("Baixando o vídeo...");
       var arquivo = await baixar(ytdlp, url, pasta, function (pct) {

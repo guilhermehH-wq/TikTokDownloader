@@ -49,6 +49,47 @@ function procurarNoBin(bin, caminho) {
   return null;
 }
 
+function importAudioOnly(filePath) {
+  try {
+    var proj = app.project;
+    if (!proj) { return "ERRO:Nenhum projeto aberto."; }
+
+    var seq = proj.activeSequence;
+    if (!seq) { return "ERRO:Nenhuma sequência ativa. Abra uma sequência na timeline e tente de novo."; }
+
+    if (!seq.audioTracks || seq.audioTracks.numTracks < 1) {
+      return "ERRO:A sequência ativa não tem trilha de áudio (A1).";
+    }
+    var a1 = seq.audioTracks[0];
+    if (a1.isLocked && a1.isLocked()) {
+      return "ERRO:A trilha A1 está bloqueada. Desbloqueie e tente de novo.";
+    }
+
+    var raiz = proj.rootItem;
+    var bin = findOrCreateBin(raiz, "Músicas");
+
+    var ok = proj.importFiles([filePath], true, bin, false);
+    if (!ok) { return "ERRO:O Premiere não conseguiu importar o áudio."; }
+
+    bin = findOrCreateBin(raiz, "Músicas");
+    var item = procurarNoBin(bin, filePath);
+    if (!item) {
+      for (var i = bin.children.numItems - 1; i >= 0; i--) {
+        if (bin.children[i].type === ProjectItemType.CLIP) {
+          item = bin.children[i];
+          break;
+        }
+      }
+    }
+    if (!item) { return "ERRO:Importou, mas não achei o áudio no bin Músicas."; }
+
+    a1.overwriteClip(item, seq.getPlayerPosition());
+    return "OK";
+  } catch (e) {
+    return "ERRO:" + e;
+  }
+}
+
 function importAndInsert(filePath) {
   try {
     var proj = app.project;

@@ -1,8 +1,12 @@
 # TikTok Downloader (CEP / Premiere Pro macOS)
 
-Painel que cola um link do TikTok, baixa com `yt-dlp` na pasta `Downloads_TikTok/`
-ao lado do `.prproj`, importa para o bin **TikTok**, insere no playhead (V1 + A1) e
-extrai a música do próprio vídeo em `.wav` (48 kHz, estéreo) na mesma pasta.
+Painel que aceita link do **TikTok** ou do **YouTube**:
+
+- TikTok: baixa o vídeo com `yt-dlp` na pasta `Downloads_TikTok/` ao lado do
+  `.prproj`, importa para o bin **TikTok**, insere no playhead (V1 + A1) e extrai
+  a música do próprio vídeo em `.wav` (48 kHz, estéreo) na mesma pasta.
+- YouTube: baixa só o áudio (`bestaudio`, client `web_embedded`), converte para
+  `.wav` 48 kHz e insere em **A1** no playhead (bin **Músicas**).
 
 ## Estrutura
 
@@ -42,7 +46,8 @@ O script já faz:
      `~/Library/Application Support/TikTokDownloader/config.json`,
      indexada pelo caminho do `.prproj`.
 3. Abra uma sequência (precisa de sequência ativa e trilha V1 desbloqueada).
-4. Cole o link, posicione o playhead, clique em **Baixar e inserir na timeline**.
+4. Cole o link (TikTok ou YouTube), posicione o playhead e clique em
+   **Baixar e inserir na timeline**.
 5. Ao terminar: vídeo na timeline + `id.wav` com a música na pasta de downloads.
 6. Quando sair versão nova aparece o botão **Atualizar X** no cabeçalho do painel
    (baixa do GitHub Releases e pede para reiniciar o Premiere).
