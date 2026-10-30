@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikTok Downloader</title>
+<style>
+/* ============================================================
+   Painel CEP — linguagem skeuomorph (metal escovado + LEDs)
+   adaptada ao tema escuro do Premiere.
+   ============================================================ */
+:root{
+  color-scheme: dark;
+  --bg:#232323;
+  --plate:#2b2b2b;
+  --sunk:#191919;
+  --well:#141414;
+  --raised:#323232;
+  --text:#e6e6e6;
+  --dim:#9a9a9a;
+  --accent:#2d8cf0;
+  --accent-hi:#5aabf7;
+  --accent-lo:#1f6ec2;
+  --ok:#4fd68f;
+  --erro:#ff6b60;
+  --r:4px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+
+  /* metal escovado reutilizável */
+  --brushed:
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.022) 0px,
+      rgba(255,255,255,.022) 1px,
+      rgba(0,0,0,.02) 1px,
+      rgba(0,0,0,.02) 3px);
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{
+  background-color:var(--bg);
+  height:100%;
+}
+body{
+  margin:0; padding:0;
+  min-height:100%;
+  background-color:var(--bg);
+  background-image:var(--brushed);
+  color:var(--text);
+  font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:12px;
+  line-height:1.45;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:#1b1b1b; }
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#454545,#333333);
+  border-radius:6px;
+  border:2px solid #1b1b1b;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+/* ============ motion ============ */
+@keyframes rise{
+  from{ opacity:0; transform:translateY(6px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes reveal{
+  from{ opacity:0; transform:translateY(-4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes enterStatus{
+  from{ opacity:0; transform:translateY(3px) scale(.99); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes breathe{
+  0%,100%{ opacity:.30; }
+  50%{ opacity:.85; }
+}
+.hd{ animation:rise .34s var(--ease) both; }
+.field{ animation:rise .34s var(--ease) .05s both; }
+.opt:nth-child(1){ animation:rise .34s var(--ease) .1s both; }
+.opt:nth-child(2){ animation:rise .34s var(--ease) .15s both; }
+.side{ animation:rise .34s var(--ease) .2s both; }
+
+/* ---------- shell ---------- */
+.panel{ padding:12px 12px 16px; min-width:0; }
+@media (min-width:700px){
+  .panel{ padding:14px 16px 20px; }
+}
+
+/* ---------- header: plaqueta aparafusada ---------- */
+.hd{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  margin-bottom:15px;
+  border-radius:var(--r);
+  background-color:#2c2c2c;
+  background-image:
+    var(--brushed),
+    linear-gradient(180deg,#353535 0%,#272727 52%,#212121 100%);
+  border:1px solid #161616;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.09),
+    inset 0 -1px 0 rgba(0,0,0,.55),
+    0 1px 2px rgba(0,0,0,.5),
+    0 3px 8px -4px rgba(0,0,0,.6);
+}
+/* parafusos */
+.hd::before,
+.hd::after{
+  content:"";
+  position:absolute;
+  top:5px;
+  width:4px; height:4px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#5c5c5c,#2a2a2a 70%);
+  box-shadow:0 1px 0 rgba(255,255,255,.09), inset 0 0 0 1px rgba(0,0,0,.6);
+}
+.hd::before{ left:5px; }
+.hd::after{ right:5px; }
+
+.hd-mark{
+  position:relative;
+  flex:0 0 auto;
+  width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%;
+  color:#ffffff;
+  background-color:#1b1b1b;
+  background-image:radial-gradient(circle at 50% 28%,#3c3c3c 0%,#1d1d1d 72%);
+  border:1px solid #0f0f0f;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 -2px 4px rgba(0,0,0,.7),
+    0 1px 2px rgba(0,0,0,.6);
+}
+.hd-mark svg{ position:relative; z-index:2; color:var(--accent-hi); }
+/* LED em volta do ícone */
+.hd-mark::after{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius:50%;
+  box-shadow:
+    0 0 0 1px rgba(45,140,240,.28),
+    0 0 10px 0 rgba(45,140,240,.42);
+  animation:breathe 3.6s ease-in-out infinite;
+  pointer-events:none;
+}
+
+.hd-txt{ min-width:0; flex:1 1 auto; }
+.hd-txt h1{
+  margin:0;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.7px;
+  text-transform:uppercase;
+  color:#dcdcdc;
+  text-shadow:0 1px 0 rgba(0,0,0,.85);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.hd-txt p{
+  margin:2px 0 0;
+  font-size:10.5px;
+  letter-spacing:.2px;
+  color:#848484;
+  text-shadow:0 1px 0 rgba(0,0,0,.7);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* vent: grade de furinhos */
+.hd-vent{
+  flex:0 0 auto;
+  display:none;
+  width:34px; height:20px;
+  border-radius:2px;
+  background-image:radial-gradient(circle, #0d0d0d 1px, rgba(0,0,0,0) 1.1px);
+  background-size:4px 4px;
+  background-position:0 0;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.8);
+  opacity:.85;
+}
+@media (min-width:480px){ .hd-vent{ display:block; } }
+
+/* ---------- layout ---------- */
+.grid{ display:block; }
+@media (min-width:700px){
+  .grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 320px;
+    column-gap:18px;
+    align-items:start;
+  }
+  .side{
+    margin-top:0 !important;
+    padding:0 0 0 18px !important;
+    border-top:0 !important;
+    border-left:1px solid #141414;
+    box-shadow:1px 0 0 rgba(255,255,255,.04), inset 1px 0 0 rgba(255,255,255,.03) !important;
+  }
+}
+
+/* ---------- campo: vala rebaixada ---------- */
+.lbl{
+  display:block;
+  margin:0 0 7px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+  color:#8e8e8e;
+  text-shadow:0 1px 0 rgba(0,0,0,.8);
+  transition:color .18s var(--ease), letter-spacing .18s var(--ease);
+}
+.field:focus-within .lbl{ color:var(--accent-hi); letter-spacing:1.1px; }
+
+.inp{
+  position:relative;
+  display:flex;
+  align-items:center;
+  border-radius:var(--r);
+  background-color:var(--well);
+  background-image:linear-gradient(180deg,#101010 0%,#1a1a1a 100%);
+  border:1px solid #0c0c0c;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.9),
+    inset 0 -1px 0 rgba(255,255,255,.045),
+    0 1px 0 rgba(255,255,255,.05);
+  transition:border-color .16s var(--ease), box-shadow .22s var(--ease);
+}
+.inp:hover{ border-color:#1e1e1e; }
+.inp:focus-within{
+  border-color:var(--accent-lo);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.9),
+    inset 0 -1px 0 rgba(255,255,255,.045),
+    0 0 0 1px rgba(45,140,240,.45),
+    0 0 14px -3px rgba(45,140,240,.55);
+}
+.inp-ico{
+  position:absolute;
+  left:9px; top:50%;
+  margin-top:-7px;
+  width:14px; height:14px;
+  color:#5e5e5e;
+  pointer-events:none;
+  transition:color .18s var(--ease), transform .18s var(--ease);
+}
+.inp:focus-within .inp-ico{ color:var(--accent-hi); transform:scale(1.08); }
+
+.inp input{
+  flex:1 1 auto;
+  width:100%;
+  min-width:0;
+  height:32px;
+  padding:0 10px 0 28px;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#eaeaea;
+  font-family:inherit;
+  font-size:12px;
+  line-height:32px;
+  caret-color:var(--accent-hi);
+  text-shadow:0 1px 0 rgba(0,0,0,.7);
+}
+.inp input::placeholder{ color:#585858; }
+
+/* ---------- opções ---------- */
+.opts{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid #161616;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+}
+.opt + .opt{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid #191919;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+/* --- chave física --- */
+.chk{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  cursor:pointer;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.chk input{
+  position:absolute;
+  top:0; left:0;
+  width:34px; height:18px;
+  margin:0;
+  opacity:0;
+  pointer-events:none;
+}
+
+.chk-track{
+  position:relative;
+  flex:0 0 auto;
+  width:34px; height:18px;
+  border-radius:9px;
+  background-color:#151515;
+  background-image:linear-gradient(180deg,#0e0e0e,#1d1d1d);
+  border:1px solid #0a0a0a;
+  box-shadow:
+    inset 0 2px 3px rgba(0,0,0,.95),
+    inset 0 -1px 0 rgba(255,255,255,.055),
+    0 1px 0 rgba(255,255,255,.055);
+  transition:background-color .2s var(--ease), box-shadow .25s var(--ease), border-color .2s var(--ease);
+}
+.chk-knob{
+  position:absolute;
+  top:1px; left:1px;
+  width:16px; height:16px;
+  border-radius:50%;
+  background-color:#4a4a4a;
+  background-image:
+    radial-gradient(circle at 50% 26%, #9a9a9a 0%, #5c5c5c 46%, #333333 100%);
+  border:1px solid #141414;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.4),
+    inset 0 -2px 3px rgba(0,0,0,.55),
+    0 2px 3px rgba(0,0,0,.7),
+    0 1px 0 rgba(255,255,255,.1);
+  transition:transform .2s var(--ease), background-image .2s var(--ease), box-shadow .2s var(--ease);
+}
+.chk input:checked + .chk-track{
+  background-color:#12324f;
+  background-image:linear-gradient(180deg,#0d2438,#163d5e);
+  border-color:#0a2135;
+  box-shadow:
+    inset 0 2px 3px rgba(0,0,0,.85),
+    inset 0 0 8px rgba(45,140,240,.55),
+    0 0 9px -2px rgba(45,140,240,.8);
+}
+.chk input:checked + .chk-track .chk-knob{
+  transform:translateX(16px);
+  background-image:
+    radial-gradient(circle at 50% 26%, #ffffff 0%, #a9d0f8 42%, #4f9de8 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.7),
+    inset 0 -2px 3px rgba(12,52,90,.6),
+    0 2px 3px rgba(0,0,0,.7),
+    0 0 8px 1px rgba(45,140,240,.85);
+}
+.chk:active .chk-knob{ box-shadow:inset 0 2px 3px rgba(0,0,0,.6), 0 1px 1px rgba(0,0,0,.6); }
+.chk input:focus-visible + .chk-track{
+  box-shadow:
+    inset 0 2px 3px rgba(0,0,0,.95),
+    inset 0 -1px 0 rgba(255,255,255,.055),
+    0 0 0 2px rgba(45,140,240,.55);
+}
+
+.chk-t{
+  min-width:0;
+  font-size:12px;
+  line-height:1.35;
+  color:#c8c8c8;
+  text-shadow:0 1px 0 rgba(0,0,0,.75);
+  transition:color .16s var(--ease);
+}
+.chk:hover .chk-t{ color:#e4e4e4; }
+.chk input:checked ~ .chk-t{ color:#f2f2f2; }
+.chk-h{ font-size:10.5px; color:#7d7d7d; }
+
+/* --- select: placa embutida --- */
+.sel{ position:relative; margin:9px 0 0 43px; }
+.sel select{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:28px;
+  padding:0 24px 0 10px;
+  font-family:inherit;
+  font-size:11.5px;
+  color:#d8d8d8;
+  background-color:#2e2e2e;
+  background-image:linear-gradient(180deg,#383838 0%,#2a2a2a 100%);
+  border:1px solid #161616;
+  border-radius:var(--r);
+  outline:0;
+  cursor:pointer;
+  text-shadow:0 1px 0 rgba(0,0,0,.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.1),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 1px 2px rgba(0,0,0,.45);
+  transition:background-color .16s var(--ease), box-shadow .2s var(--ease);
+}
+.sel select:hover{
+  background-image:linear-gradient(180deg,#424242 0%,#333333 100%);
+}
+.sel select:focus-visible{
+  border-color:var(--accent-lo);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.1),
+    0 0 0 1px rgba(45,140,240,.5),
+    0 0 12px -3px rgba(45,140,240,.6);
+}
+.sel::after{
+  content:"";
+  position:absolute;
+  right:9px; top:50%;
+  margin-top:-2px;
+  width:0; height:0;
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  border-top:5px solid #949494;
+  pointer-events:none;
+  transition:border-top-color .16s var(--ease);
+}
+.sel:hover::after{ border-top-color:#d2d2d2; }
+
+/* --- linha do arquivo de cookies --- */
+#linhaArquivo{
+  display:none;
+  flex-direction:column;
+  gap:7px;
+  margin:9px 0 0 43px;
+  animation:reveal .22s var(--ease) both;
+}
+#caminhoCookies{
+  flex:1 1 auto;
+  min-width:0;
+  height:28px;
+  padding:0 9px;
+  font-family:inherit;
+  font-size:11px;
+  color:#c6c6c6;
+  background-color:var(--well);
+  background-image:linear-gradient(180deg,#101010,#1a1a1a);
+  border:1px solid #0c0c0c;
+  border-radius:var(--r);
+  outline:0;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.9),
+    inset 0 -1px 0 rgba(255,255,255,.04);
+  transition:border-color .16s var(--ease), box-shadow .2s var(--ease);
+}
+#caminhoCookies::placeholder{ color:#565656; }
+#caminhoCookies:focus{
+  border-color:var(--accent-lo);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.9),
+    0 0 0 1px rgba(45,140,240,.45),
+    0 0 12px -3px rgba(45,140,240,.5);
+}
+
+#btnCookies{
+  flex:0 0 auto;
+  height:28px;
+  padding:0 13px;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.3px;
+  color:#d4d4d4;
+  background-color:#343434;
+  background-image:linear-gradient(180deg,#414141 0%,#2c2c2c 100%);
+  border:1px solid #151515;
+  border-radius:var(--r);
+  cursor:pointer;
+  white-space:nowrap;
+  text-shadow:0 1px 0 rgba(0,0,0,.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 1px 2px rgba(0,0,0,.5);
+  transition:background-image .16s var(--ease), box-shadow .16s var(--ease), transform .07s ease;
+}
+#btnCookies:hover{
+  background-image:linear-gradient(180deg,#4c4c4c 0%,#363636 100%);
+  color:#f0f0f0;
+}
+#btnCookies:active{
+  background-image:linear-gradient(180deg,#252525 0%,#303030 100%);
+  transform:translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.75),
+    0 0 0 rgba(0,0,0,0);
+}
+#btnCookies:focus-visible{
+  outline:none;
+  border-color:var(--accent-lo);
+  box-shadow:0 0 0 2px rgba(45,140,240,.5);
+}
+@media (min-width:520px){
+  #linhaArquivo{ flex-direction:row; align-items:center; }
+  #btnCookies{ width:auto; }
+}
+
+/* --- dica: etiqueta rebaixada --- */
+#dicaCookies{
+  display:none;
+  position:relative;
+  margin:10px 0 0 43px;
+  padding:8px 10px 8px 28px;
+  font-size:10.5px;
+  line-height:1.5;
+  color:#8fa6bb;
+  background-color:#1b2026;
+  border:1px solid #141b22;
+  border-radius:var(--r);
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,.7),
+    inset 0 0 12px rgba(45,140,240,.07);
+  animation:reveal .24s var(--ease) both;
+}
+#dicaCookies::before{
+  content:"";
+  position:absolute;
+  left:9px; top:9px;
+  width:12px; height:12px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a9fd6' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11.2v5.2'/%3E%3Cpath d='M12 8v.6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-size:12px 12px;
+}
+
+/* ---------- ações ---------- */
+.side{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:16px;
+  padding-top:15px;
+  border-top:1px solid #161616;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+}
+
+/* --- BOTÃO FÍSICO ILUMINADO --- */
+#btn{
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  min-height:38px;
+  padding:0 14px;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.2px;
+  color:#ffffff;
+  text-shadow:0 1px 1px rgba(0,0,0,.45);
+  background-color:#1d6fc0;
+  background-image:
+    linear-gradient(180deg,
+      rgba(255,255,255,.26) 0%,
+      rgba(255,255,255,.06) 42%,
+      rgba(0,0,0,.06) 44%,
+      rgba(0,0,0,.22) 100%),
+    linear-gradient(180deg,#3d97f0 0%,#1f77cf 100%);
+  border:1px solid #0e4c85;
+  border-radius:5px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -2px 4px rgba(0,0,0,.4),
+    0 2px 0 #0d3f6e,
+    0 4px 8px -2px rgba(0,0,0,.65),
+    0 0 16px -4px rgba(45,140,240,.5);
+  cursor:pointer;
+  transition:background-image .16s var(--ease), box-shadow .18s var(--ease),
+             color .16s var(--ease), transform .07s ease, border-color .16s var(--ease);
+}
+/* aro interno */
+#btn::before{
+  content:"";
+  position:absolute;
+  top:2px; left:2px; right:2px;
+  height:46%;
+  border-radius:4px 4px 60% 60%;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0));
+  pointer-events:none;
+}
+/* varredura no hover */
+#btn .shine{
+  position:absolute;
+  top:-60%; left:0;
+  width:38%; height:220%;
+  background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.38),rgba(255,255,255,0));
+  transform:translateX(-160%) skewX(-16deg);
+  pointer-events:none;
+}
+#btn:hover:not(:disabled) .shine{ animation:sweep .66s var(--ease) 1; }
+@keyframes sweep{
+  from{ transform:translateX(-160%) skewX(-16deg); }
+  to{ transform:translateX(460%) skewX(-16deg); }
+}
+#btn svg{
+  position:relative; z-index:2;
+  flex:0 0 auto;
+  width:14px; height:14px;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.45));
+  transition:transform .18s var(--ease);
+}
+#btn .btn-label{
+  position:relative; z-index:2;
+  min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+/* uppercase só quando há largura: abaixo disso o rótulo trunca */
+@media (min-width:520px){
+  #btn .btn-label{
+    text-transform:uppercase;
+    letter-spacing:.45px;
+    font-size:11.5px;
+  }
+}
+#btn:hover:not(:disabled){
+  background-image:
+    linear-gradient(180deg,
+      rgba(255,255,255,.3) 0%,
+      rgba(255,255,255,.08) 42%,
+      rgba(0,0,0,.04) 44%,
+      rgba(0,0,0,.18) 100%),
+    linear-gradient(180deg,#57a7f8 0%,#2b84dd 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    inset 0 -2px 4px rgba(0,0,0,.38),
+    0 2px 0 #0d3f6e,
+    0 4px 10px -2px rgba(0,0,0,.65),
+    0 0 22px -3px rgba(45,140,240,.72);
+}
+#btn:hover:not(:disabled) svg{ transform:translateY(1px); }
+#btn:active:not(:disabled){
+  transform:translateY(2px);
+  background-image:
+    linear-gradient(180deg,
+      rgba(0,0,0,.22) 0%,
+      rgba(0,0,0,.06) 60%,
+      rgba(255,255,255,.1) 100%),
+    linear-gradient(180deg,#1c6bb6 0%,#2478cf 100%);
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,.55),
+    inset 0 -1px 0 rgba(255,255,255,.14),
+    0 0 0 #0d3f6e,
+    0 2px 4px -1px rgba(0,0,0,.6),
+    0 0 12px -4px rgba(45,140,240,.4);
+}
+#btn:focus-visible{
+  outline:none;
+  border-color:#8ec4f7;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -2px 4px rgba(0,0,0,.4),
+    0 2px 0 #0d3f6e,
+    0 0 0 2px #232323,
+    0 0 0 4px rgba(45,140,240,.85);
+}
+/* desligado: metal apagado, sem luz */
+#btn:disabled{
+  background-image:
+    linear-gradient(180deg,
+      rgba(255,255,255,.07) 0%,
+      rgba(255,255,255,.02) 44%,
+      rgba(0,0,0,.1) 46%,
+      rgba(0,0,0,.3) 100%),
+    linear-gradient(180deg,#3a3a3a 0%,#2b2b2b 100%);
+  border-color:#141414;
+  color:#6f6f6f;
+  text-shadow:0 1px 0 rgba(0,0,0,.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 1px 0 #1a1a1a,
+    0 2px 4px -2px rgba(0,0,0,.5);
+  cursor:default !important;
+}
+#btn:disabled::before{ opacity:.35; }
+#btn:disabled .shine{ display:none; }
+
+/* --- barra: canal rebaixado + preenchimento metálico --- */
+#barra{
+  position:relative;
+  height:9px;
+  border-radius:5px;
+  background-color:#0e0e0e;
+  background-image:linear-gradient(180deg,#0a0a0a,#171717);
+  border:1px solid #050505;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.95),
+    inset 0 -1px 0 rgba(255,255,255,.05),
+    0 1px 0 rgba(255,255,255,.055);
+  overflow:hidden;
+}
+#barra > i{
+  display:block;
+  position:relative;
+  height:100%;
+  width:0;
+  border-radius:4px;
+  background-color:#2d8cf0;
+  background-image:
+    repeating-linear-gradient(-45deg,
+      rgba(255,255,255,.2) 0px,
+      rgba(255,255,255,.2) 5px,
+      rgba(255,255,255,0) 5px,
+      rgba(255,255,255,0) 11px),
+    linear-gradient(180deg,#63b0f8 0%,#2d8cf0 46%,#1b6bbd 100%);
+  background-size:16px 16px, 100% 100%;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    0 0 10px rgba(45,140,240,.6);
+  transition:width .12s linear;
+  animation:listras .68s linear infinite;
+}
+@keyframes listras{
+  from{ background-position:0 0, 0 0; }
+  to{ background-position:16px 0, 0 0; }
+}
+
+/* --- status: visor de LED --- */
+#status{
+  position:relative;
+  margin:0;
+  padding:8px 10px 8px 26px;
+  font-size:11.5px;
+  line-height:1.45;
+  color:#8f8f8f;
+  background-color:#161616;
+  background-image:linear-gradient(180deg,#111111,#1c1c1c);
+  border:1px solid #0a0a0a;
+  border-radius:var(--r);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.85),
+    inset 0 -1px 0 rgba(255,255,255,.04);
+  overflow-wrap:anywhere;
+  text-shadow:0 1px 0 rgba(0,0,0,.8);
+  animation:enterStatus .22s var(--ease) both;
+}
+#status::before{
+  content:"";
+  position:absolute;
+  left:10px; top:13px;
+  width:6px; height:6px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#6e6e6e,#3a3a3a);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.6);
+  transition:background-color .2s ease, box-shadow .2s ease;
+}
+#status:empty{ display:none; }
+
+@keyframes pulseOk{
+  0%{ box-shadow:inset 0 2px 4px rgba(0,0,0,.85), 0 0 0 0 rgba(79,214,143,.4); }
+  100%{ box-shadow:inset 0 2px 4px rgba(0,0,0,.85), 0 0 0 8px rgba(79,214,143,0); }
+}
+@keyframes pulseErro{
+  0%{ box-shadow:inset 0 2px 4px rgba(0,0,0,.85), 0 0 0 0 rgba(255,107,96,.4); }
+  100%{ box-shadow:inset 0 2px 4px rgba(0,0,0,.85), 0 0 0 8px rgba(255,107,96,0); }
+}
+
+#status.ok{
+  color:#8fe8b8;
+  background-image:linear-gradient(180deg,#0f1a13,#16281c);
+  border-color:#0c2a19;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.8),
+    inset 0 0 16px rgba(79,214,143,.12);
+  animation:enterStatus .22s var(--ease) both, pulseOk .75s ease-out .22s 1;
+}
+#status.ok::before{
+  background:radial-gradient(circle at 35% 30%,#b6f7d3,#2fbd74 70%);
+  box-shadow:0 0 8px 1px rgba(79,214,143,.9), inset 0 0 0 1px rgba(0,0,0,.35);
+}
+
+#status.erro{
+  color:#ffb0a9;
+  background-image:linear-gradient(180deg,#1e1110,#2b1615);
+  border-color:#3a1a17;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.8),
+    inset 0 0 16px rgba(255,107,96,.12);
+  animation:enterStatus .22s var(--ease) both, pulseErro .75s ease-out .22s 1;
+}
+#status.erro::before{
+  background:radial-gradient(circle at 35% 30%,#ffc9c3,#e0463a 70%);
+  box-shadow:0 0 8px 1px rgba(255,107,96,.85), inset 0 0 0 1px rgba(0,0,0,.35);
+}
+
+/* ---------- acessibilidade ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+}
+
+/* ---------- pasta de downloads ---------- */
+.field-dir{ margin-top:14px; }
+.inp-dir input{ padding-right:4px; text-overflow:ellipsis; }
+#pasta{ color:#a6a6a6; cursor:default; }
+#pasta::placeholder{ color:#565656; }
+#btnPasta{
+  flex:0 0 auto;
+  height:24px;
+  margin:0 4px 0 0;
+  padding:0 9px;
+  font-family:inherit;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  color:#d6d6d6;
+  white-space:nowrap;
+  background-color:#343434;
+  background-image:linear-gradient(180deg,#414141 0%,#2c2c2c 100%);
+  border:1px solid #151515;
+  border-radius:3px;
+  cursor:pointer;
+  text-shadow:0 1px 0 rgba(0,0,0,.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 1px 2px rgba(0,0,0,.5);
+  transition:background-image .16s var(--ease), color .16s var(--ease), transform .07s ease;
+}
+#btnPasta:hover{ background-image:linear-gradient(180deg,#4c4c4c 0%,#363636 100%); color:#f2f2f2; }
+#btnPasta:active{ background-image:linear-gradient(180deg,#252525 0%,#303030 100%); transform:translateY(1px); }
+#btnPasta:focus-visible{ outline:none; border-color:var(--accent-lo); box-shadow:0 0 0 2px rgba(45,140,240,.5); }
+@media (prefers-reduced-motion:reduce){ #btnPasta{ transition:none; } }
+</style>
+</head>
+<body>
+
+<div class="panel">
+
+  <header class="hd">
+    <span class="hd-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 4v10"></path>
+        <path d="M7.6 10.4 12 14.8l4.4-4.4"></path>
+        <path d="M5 19.5h14"></path>
+      </svg>
+    </span>
+    <div class="hd-txt">
+      <h1>TikTok Downloader</h1>
+      <p>Cole o link do vídeo para começar.</p>
+    </div>
+    <span class="hd-vent" aria-hidden="true"></span>
+  </header>
+
+  <div class="grid">
+
+    <div class="col">
+
+      <div class="field">
+        <label class="lbl" for="url">Link do vídeo</label>
+        <div class="inp">
+          <svg class="inp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.2 13.3a4.6 4.6 0 0 0 6.9.5l2.1-2.1a4.6 4.6 0 0 0-6.5-6.5l-1.2 1.2"></path>
+            <path d="M13.8 10.7a4.6 4.6 0 0 0-6.9-.5l-2.1 2.1a4.6 4.6 0 0 0 6.5 6.5l1.2-1.2"></path>
+          </svg>
+          <input id="url" type="text" placeholder="https://www.tiktok.com/@usuario/video/..." autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="field field-dir">
+        <label class="lbl" for="pasta">Pasta de downloads</label>
+        <div class="inp inp-dir">
+          <svg class="inp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 7.5a2 2 0 0 1 2-2h3.4l1.8 2h7.8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2z"></path>
+          </svg>
+          <input id="pasta" type="text" readonly placeholder="Abra um projeto salvo" aria-label="Pasta de downloads deste projeto">
+          <button id="btnPasta" type="button">Escolher…</button>
+        </div>
+      </div>
+
+      <div class="opts">
+
+        <div class="opt">
+          <label class="chk">
+            <input id="usarCookies" type="checkbox">
+            <span class="chk-track" aria-hidden="true"><span class="chk-knob"></span></span>
+            <span class="chk-t">Usar login do navegador<span class="chk-h"> (vídeo privado / minha conta)</span></span>
+          </label>
+
+          <div class="sel">
+            <select id="navegador" aria-label="Navegador">
+              <option value="chrome">Chrome</option>
+              <option value="safari">Safari</option>
+              <option value="firefox">Firefox</option>
+              <option value="brave">Brave</option>
+              <option value="edge">Edge</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="opt">
+          <label class="chk">
+            <input id="usarArquivo" type="checkbox">
+            <span class="chk-track" aria-hidden="true"><span class="chk-knob"></span></span>
+            <span class="chk-t">Usar arquivo de cookies</span>
+          </label>
+
+          <div id="linhaArquivo">
+            <input id="caminhoCookies" type="text" placeholder="Caminho do cookies.txt" autocomplete="off" spellcheck="false" aria-label="Caminho do arquivo de cookies">
+            <button id="btnCookies" type="button">Selecionar</button>
+          </div>
+
+          <div id="dicaCookies">Dica: exporte com a extensão “Get cookies.txt LOCALLY” e salve na pasta do projeto. Se preferir ler do navegador, o macOS exige Acesso Total ao Disco para o Premiere.</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="side">
+      <button id="btn" type="button">
+        <span class="shine" aria-hidden="true"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4v10"></path>
+          <path d="M7.6 10.4 12 14.8l4.4-4.4"></path>
+          <path d="M5 19.5h14"></path>
+        </svg>
+        <span class="btn-label">Baixar e inserir na timeline</span>
+      </button>
+
+      <div id="barra" aria-hidden="true"><i></i></div>
+
+      <div id="status" role="status" aria-live="polite"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>

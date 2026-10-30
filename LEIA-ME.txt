@@ -1,0 +1,35 @@
+TikTok Downloader - instalacao (macOS)
+======================================
+
+1. Tenha o Homebrew: https://brew.sh
+2. Abra o Terminal e rode:
+     brew install yt-dlp ffmpeg
+3. De duplo clique em "instalar.command".
+   (Se o macOS disser que nao pode abrir: clique com o botao direito > Abrir,
+    ou rode no Terminal: xattr -dr com.apple.quarantine <pasta>)
+4. Feche e abra o Premiere Pro.
+5. Janela > Extensoes > TikTok Downloader
+
+Como usar
+---------
+- Deixe o projeto salvo e uma sequencia aberta na timeline.
+- Na primeira vez, escolha a "Pasta de downloads" no painel (ela fica salva
+  para esse projeto). O padrao e Downloads_TikTok/ ao lado do .prproj.
+- Cole o link do video (https://www.tiktok.com/@usuario/video/123...).
+- Clique em "Baixar e inserir na timeline".
+- O video vai para a pasta Downloads_TikTok/ ao lado do .prproj, entra no bin
+  "TikTok" e e inserido no playhead (V1 + A1).
+
+Video privado / da sua conta
+----------------------------
+O painel tenta ler os cookies do navegador, mas o macOS bloqueia essa leitura
+por padrao. Duas saidas:
+
+a) Ajustes do Sistema > Privacidade e Seguranca > Acesso Total ao Disco:
+   adicione o Adobe Premiere Pro e reinicie o Premiere.
+b) Instale a extensao "Get cookies.txt LOCALLY" no Chrome, exporte os cookies
+   do tiktok.com e use a opcao "Usar arquivo cookies.txt" no painel.
+
+Se o download falhar
+--------------------
+Atualize o yt-dlp:  brew upgrade yt-dlp

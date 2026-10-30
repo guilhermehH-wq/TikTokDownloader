@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>TikTok Downloader</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 14px;
+    background: #232323; color: #e6e6e6;
+    font: 12px -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  h1 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #888; margin: 0 0 4px; font-weight: 600; }
+  label { display: block; margin: 10px 0 4px; color: #aaa; }
+  input[type=text] {
+    width: 100%; padding: 8px; border-radius: 4px;
+    border: 1px solid #444; background: #1a1a1a; color: #fff; font-size: 12px;
+  }
+  input[type=text]:focus { outline: none; border-color: #2d8cf0; }
+  select { padding: 5px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 4px; }
+  .row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .row input[type=checkbox] { margin: 0; }
+  .row label { margin: 0; }
+  button#btn {
+    width: 100%; margin-top: 14px; padding: 10px;
+    border: 0; border-radius: 4px; cursor: pointer;
+    background: #2d8cf0; color: #fff; font-size: 13px; font-weight: 600;
+  }
+  button#btn:disabled { background: #555; cursor: default; }
+  button.mini {
+    margin: 0 0 0 auto; padding: 4px 10px; border: 1px solid #444; border-radius: 4px;
+    background: #2a2a2a; color: #ddd; font-size: 11px; cursor: pointer;
+  }
+  button.mini:hover { background: #333; }
+  #caminhoCookies { font-size: 11px; padding: 6px; }
+  #status {
+    margin-top: 12px; padding: 8px; min-height: 54px;
+    background: #1a1a1a; border-radius: 4px; white-space: pre-wrap;
+    word-break: break-word; color: #bbb; line-height: 1.45;
+  }
+  #status.erro { color: #ff7b7b; }
+  #status.ok { color: #7bd88f; }
+  #barra { height: 3px; background: #333; border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
+  #barra > i { display: block; height: 100%; width: 0%; background: #2d8cf0; transition: width .2s linear; }
+  .dica { margin-top: 8px; color: #777; font-size: 11px; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <h1>TikTok Downloader</h1>
+
+  <label for="url">Link do vídeo</label>
+  <input type="text" id="url" placeholder="https://www.tiktok.com/@usuario/video/...">
+
+  <label>Pasta de downloads deste projeto</label>
+  <div class="row" style="margin-top:0">
+    <input type="text" id="pasta" readonly placeholder="Abra um projeto salvo">
+    <button type="button" id="btnPasta" class="mini">Escolher…</button>
+  </div>
+
+  <label>Vídeo privado / da sua conta</label>
+
+  <div class="row" style="margin-top:4px">
+    <input type="checkbox" id="usarCookies">
+    <label for="usarCookies">Ler do navegador</label>
+    <select id="navegador" style="margin-left:auto">
+      <option value="chrome">Chrome</option>
+      <option value="safari">Safari</option>
+      <option value="firefox">Firefox</option>
+      <option value="brave">Brave</option>
+      <option value="edge">Edge</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <input type="checkbox" id="usarArquivo">
+    <label for="usarArquivo">Usar arquivo cookies.txt</label>
+    <button type="button" id="btnCookies" class="mini">Escolher…</button>
+  </div>
+  <div class="row" id="linhaArquivo" style="display:none">
+    <input type="text" id="caminhoCookies" placeholder="/caminho/para/cookies.txt">
+  </div>
+  <div class="dica" id="dicaCookies" style="display:none">Exporte com a extensão "Get cookies.txt LOCALLY" e salve na pasta do projeto.</div>
+
+  <button id="btn">Baixar e inserir na timeline</button>
+  <div id="barra"><i></i></div>
+  <div id="status">Pronto. Cole o link e clique no botão.</div>
+  <div class="dica">A pasta de downloads é salva por projeto (padrão: <b>Downloads_TikTok/</b> ao lado do .prproj). O vídeo entra no bin <b>TikTok</b> e no playhead (V1 + A1).</div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

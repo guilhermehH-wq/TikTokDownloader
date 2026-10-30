@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikTok Downloader</title>
+<style>
+/* ============================================================
+   Painel CEP — "glow capsule"
+   Linguagem: cápsula preta, geometria de pílula, um único
+   acento âmbar que vaza luz para fora da peça.
+   ============================================================ */
+:root{
+  color-scheme: dark;
+
+  --bg:#080808;
+  --card:#0c0c0c;
+  --card-2:#111111;
+  --raise:#181818;
+
+  --line:rgba(255,255,255,.075);
+  --line-2:rgba(255,255,255,.045);
+
+  --text:#f0f0f0;
+  --dim:#8a8a8a;
+  --dim-2:#6a6a6a;
+
+  --amber:#ff8a3c;
+  --amber-hi:#ffab6e;
+  --amber-lo:#e8660f;
+  --amber-ink:#2a1305;
+
+  --ok:#8fe3b8;
+  --erro:#ff7b72;
+
+  --r:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{
+  background-color:var(--bg);
+  height:100%;
+}
+body{
+  margin:0;
+  padding:0;
+  min-height:100%;
+  background-color:var(--bg);
+  /* uma única fonte de luz ambiente, no rodapé */
+  background-image:radial-gradient(85% 46% at 50% 104%, rgba(255,138,60,.13) 0%, rgba(255,138,60,0) 68%);
+  background-repeat:no-repeat;
+  color:var(--text);
+  font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:12px;
+  line-height:1.45;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:#060606; }
+::-webkit-scrollbar-thumb{
+  background:#262626;
+  border-radius:6px;
+  border:2px solid #060606;
+}
+::-webkit-scrollbar-thumb:hover{ background:#343434; }
+
+/* ============ motion ============ */
+@keyframes rise{
+  from{ opacity:0; transform:translateY(7px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes reveal{
+  from{ opacity:0; transform:translateY(-4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes enterStatus{
+  from{ opacity:0; transform:translateY(3px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes breathe{
+  0%,100%{ opacity:.35; }
+  50%{ opacity:1; }
+}
+@keyframes spill{
+  0%,100%{ opacity:.55; }
+  50%{ opacity:.85; }
+}
+
+.hd{ animation:rise .38s var(--ease) both; }
+.field{ animation:rise .38s var(--ease) .06s both; }
+.opt:nth-child(1){ animation:rise .38s var(--ease) .12s both; }
+.opt:nth-child(2){ animation:rise .38s var(--ease) .18s both; }
+.side{ animation:rise .38s var(--ease) .24s both; }
+
+/* ---------- shell: o cartão ---------- */
+.panel{
+  position:relative;
+  padding:16px 14px 18px;
+  min-width:0;
+  background-color:var(--card);
+  background-image:linear-gradient(180deg,#101010 0%,#0b0b0b 52%,#080808 100%);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    0 1px 2px rgba(0,0,0,.9),
+    0 18px 40px -18px rgba(0,0,0,1);
+}
+/* fio de luz no topo do cartão */
+.panel::before{
+  content:"";
+  position:absolute;
+  top:-1px; left:14%; right:14%;
+  height:1px;
+  background:linear-gradient(90deg,
+    rgba(255,138,60,0) 0%,
+    rgba(255,138,60,.75) 50%,
+    rgba(255,138,60,0) 100%);
+  pointer-events:none;
+}
+
+@media (min-width:700px){
+  .panel{ padding:20px 22px 24px; border-radius:18px; }
+}
+
+/* ---------- header ---------- */
+.hd{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding-bottom:14px;
+  margin-bottom:16px;
+  border-bottom:1px solid var(--line-2);
+}
+.hd-dot{
+  flex:0 0 auto;
+  width:7px; height:7px;
+  border-radius:50%;
+  background:var(--amber);
+  box-shadow:
+    0 0 0 3px rgba(255,138,60,.14),
+    0 0 10px 1px rgba(255,138,60,.85);
+  animation:breathe 3.6s ease-in-out infinite;
+}
+.hd-txt{ min-width:0; flex:1 1 auto; }
+.hd-txt h1{
+  margin:0;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:-.2px;
+  line-height:1.15;
+  color:#f6f6f6;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.hd-txt p{
+  margin:3px 0 0;
+  font-size:10.5px;
+  letter-spacing:.1px;
+  color:var(--dim-2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+#btnUpdate{
+  flex:0 0 auto;
+  appearance:none;
+  font:inherit;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.2px;
+  padding:5px 9px;
+  color:#0a0a0a;
+  background:linear-gradient(180deg,#ffa657,#ff8a3c);
+  border:1px solid #ff8a3c;
+  border-radius:999px;
+  cursor:pointer;
+}
+#btnUpdate:hover{ filter:brightness(1.08); }
+#btnUpdate:disabled{ opacity:.6; cursor:default; }
+#btnUpdate[hidden]{ display:none; }
+
+/* ---------- layout ---------- */
+.grid{ display:block; }.grid{ display:block; }
+@media (min-width:700px){
+  .grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 300px;
+    column-gap:22px;
+    align-items:start;
+  }
+  .side{
+    margin-top:0 !important;
+    padding:0 0 0 22px !important;
+    border-top:0 !important;
+    border-left:1px solid var(--line-2);
+  }
+}
+
+/* ---------- campo ---------- */
+.lbl{
+  display:block;
+  margin:0 0 8px;
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--dim-2);
+  transition:color .2s var(--ease), letter-spacing .2s var(--ease);
+}
+.field:focus-within .lbl{ color:var(--amber-hi); letter-spacing:1.8px; }
+
+/* cápsula rebaixada */
+.inp{
+  position:relative;
+  display:flex;
+  align-items:center;
+  border-radius:19px;
+  background-color:#070707;
+  border:1px solid #000000;
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,1),
+    inset 0 -1px 0 rgba(255,255,255,.045),
+    0 1px 0 rgba(255,255,255,.05);
+  transition:border-color .18s var(--ease), box-shadow .24s var(--ease);
+}
+.inp:hover{ border-color:#1f1f1f; }
+.inp:focus-within{
+  border-color:#5e2f0c;
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,1),
+    inset 0 -1px 0 rgba(255,255,255,.05),
+    0 0 0 1px rgba(255,138,60,.5),
+    0 0 18px -3px rgba(255,138,60,.6);
+}
+.inp-ico{
+  position:absolute;
+  left:12px; top:50%;
+  margin-top:-7px;
+  width:14px; height:14px;
+  color:#4e4e4e;
+  pointer-events:none;
+  transition:color .2s var(--ease), transform .2s var(--ease);
+}
+.inp:focus-within .inp-ico{ color:var(--amber); transform:scale(1.08); }
+
+.inp input{
+  flex:1 1 auto;
+  width:100%;
+  min-width:0;
+  height:38px;
+  padding:0 14px 0 34px;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#ededed;
+  font-family:inherit;
+  font-size:12px;
+  line-height:38px;
+  caret-color:var(--amber);
+}
+.inp input::placeholder{ color:#8a8a8a; }
+
+/* ---------- opções ---------- */
+.opts{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line-2);
+}
+.opt + .opt{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px solid var(--line-2);
+}
+
+/* ---------- cápsula ON/OFF ---------- */
+.chk{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  cursor:pointer;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.chk input{
+  position:absolute;
+  top:0; left:0;
+  width:48px; height:28px;
+  margin:0;
+  opacity:0;
+  pointer-events:none;
+}
+
+.chk-track{
+  position:relative;
+  flex:0 0 auto;
+  width:48px; height:28px;
+  border-radius:14px;
+  background-color:#131313;
+  border:1px solid #232323;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.9),
+    inset 0 -1px 0 rgba(255,255,255,.04);
+  transition:background-color .26s var(--ease), box-shadow .3s var(--ease), border-color .26s var(--ease);
+}
+.chk-knob{
+  position:absolute;
+  top:2px; left:2px;
+  width:22px; height:22px;
+  border-radius:50%;
+  background-color:#e9e9e9;
+  background-image:radial-gradient(circle at 50% 20%, #ffffff 0%, #ededed 52%, #cfcfcf 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,1),
+    inset 0 -2px 3px rgba(0,0,0,.16),
+    0 2px 4px rgba(0,0,0,.75);
+  transform:translateX(21px);
+  transition:transform .26s var(--ease), box-shadow .26s var(--ease);
+}
+.chk-word{
+  position:absolute;
+  top:0; bottom:0;
+  display:flex;
+  align-items:center;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.5px;
+  pointer-events:none;
+  transition:opacity .18s var(--ease), color .24s var(--ease);
+}
+.chk-off{
+  left:7px;
+  color:#666666;
+  opacity:1;
+}
+.chk-on{
+  right:7px;
+  color:var(--amber-ink);
+  opacity:0;
+}
+
+/* ON: cápsula acende em âmbar e vaza luz */
+.chk input:checked + .chk-track{
+  background-color:var(--amber);
+  background-image:linear-gradient(180deg,#ffa75f 0%,#ff8a3c 46%,#e8660f 100%);
+  border-color:#c2590d;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    inset 0 -2px 4px rgba(120,45,0,.45),
+    0 0 16px -1px rgba(255,138,60,.85),
+    0 0 30px -6px rgba(255,138,60,.6);
+}
+.chk input:checked + .chk-track .chk-knob{
+  transform:translateX(0);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,1),
+    inset 0 -2px 3px rgba(0,0,0,.14),
+    0 2px 5px rgba(90,35,0,.6);
+}
+.chk input:checked + .chk-track .chk-off{ opacity:0; }
+.chk input:checked + .chk-track .chk-on{ opacity:1; }
+
+.chk:hover input:not(:checked) + .chk-track{ border-color:#333333; background-color:#191919; }
+.chk:active .chk-knob{ transform:translateX(21px) scale(.92); }
+.chk input:checked:active + .chk-track .chk-knob{ transform:translateX(0) scale(.92); }
+.chk input:focus-visible + .chk-track{
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.9),
+    0 0 0 2px rgba(255,138,60,.85),
+    0 0 16px -2px rgba(255,138,60,.55);
+}
+
+.chk-t{
+  min-width:0;
+  font-size:12px;
+  line-height:1.35;
+  color:#c2c2c2;
+  transition:color .18s var(--ease);
+}
+.chk:hover .chk-t{ color:#ededed; }
+.chk input:checked ~ .chk-t{ color:#ffffff; }
+.chk-h{ font-size:10px; color:#767676; }
+
+/* ---------- select ---------- */
+.sel{ position:relative; margin:10px 0 0 59px; }
+.sel select{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:32px;
+  padding:0 28px 0 13px;
+  font-family:inherit;
+  font-size:11.5px;
+  color:#d6d6d6;
+  background-color:var(--raise);
+  border:1px solid #2a2a2a;
+  border-radius:16px;
+  outline:0;
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 2px 5px rgba(0,0,0,.7);
+  transition:background-color .18s var(--ease), border-color .18s var(--ease), box-shadow .22s var(--ease);
+}
+.sel select:hover{ background-color:#1e1e1e; border-color:#3a3a3a; }
+.sel select:focus-visible{
+  border-color:#7a3d0f;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 0 0 1px rgba(255,138,60,.6),
+    0 0 14px -4px rgba(255,138,60,.6);
+}
+.sel::after{
+  content:"";
+  position:absolute;
+  right:13px; top:50%;
+  margin-top:-2px;
+  width:0; height:0;
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  border-top:5px solid #8a8a8a;
+  pointer-events:none;
+  transition:border-top-color .18s var(--ease);
+}
+.sel:hover::after{ border-top-color:#d0d0d0; }
+
+/* ---------- linha do arquivo ---------- */
+#linhaArquivo{
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  margin:10px 0 0 59px;
+  animation:reveal .24s var(--ease) both;
+}
+#caminhoCookies{
+  flex:1 1 auto;
+  min-width:0;
+  height:32px;
+  padding:0 13px;
+  font-family:inherit;
+  font-size:11px;
+  color:#d0d0d0;
+  background-color:#070707;
+  border:1px solid #000000;
+  border-radius:16px;
+  outline:0;
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,1),
+    inset 0 -1px 0 rgba(255,255,255,.04);
+  transition:border-color .18s var(--ease), box-shadow .22s var(--ease);
+}
+#caminhoCookies::placeholder{ color:#8a8a8a; }
+#caminhoCookies:focus{
+  border-color:#5e2f0c;
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,1),
+    0 0 0 1px rgba(255,138,60,.5),
+    0 0 14px -4px rgba(255,138,60,.55);
+}
+
+#btnCookies{
+  flex:0 0 auto;
+  height:32px;
+  padding:0 15px;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.2px;
+  color:#dedede;
+  background-color:var(--raise);
+  border:1px solid #2c2c2c;
+  border-radius:16px;
+  cursor:pointer;
+  white-space:nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 2px 5px rgba(0,0,0,.7);
+  transition:background-color .16s var(--ease), border-color .16s var(--ease), transform .07s ease;
+}
+#btnCookies:hover{ background-color:#242424; border-color:#3d3d3d; color:#ffffff; }
+#btnCookies:active{ background-color:#111111; transform:translateY(1px); }
+#btnCookies:focus-visible{
+  outline:none;
+  border-color:#7a3d0f;
+  box-shadow:0 0 0 2px rgba(255,138,60,.7);
+}
+@media (min-width:520px){
+  #linhaArquivo{ flex-direction:row; align-items:center; }
+  #btnCookies{ width:auto; }
+}
+
+/* ---------- dica ---------- */
+#dicaCookies{
+  display:none;
+  position:relative;
+  margin:10px 0 0 59px;
+  padding:9px 11px 9px 29px;
+  font-size:10px;
+  line-height:1.5;
+  color:#b09a88;
+  background-color:#120e0a;
+  border:1px solid #2a1f16;
+  border-radius:10px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.8);
+  animation:reveal .24s var(--ease) both;
+}
+#dicaCookies::before{
+  content:"";
+  position:absolute;
+  left:10px; top:10px;
+  width:12px; height:12px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff8a3c' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11.2v5.2'/%3E%3Cpath d='M12 8v.6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-size:12px 12px;
+}
+
+/* ---------- ações ---------- */
+.side{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:18px;
+  padding-top:17px;
+  border-top:1px solid var(--line-2);
+}
+
+/* ---------- botão: cápsula âmbar que vaza luz ---------- */
+#btn{
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  width:100%;
+  min-height:42px;
+  padding:0 16px;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.1px;
+  color:var(--amber-ink);
+  background-color:var(--amber);
+  background-image:linear-gradient(180deg,#ffb375 0%,#ff8a3c 52%,#ef6d13 100%);
+  border:1px solid #c85a0c;
+  border-radius:21px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -2px 5px rgba(130,50,0,.4),
+    0 1px 2px rgba(0,0,0,.8),
+    0 6px 22px -6px rgba(255,138,60,.75),
+    0 14px 42px -14px rgba(255,138,60,.55);
+  cursor:pointer;
+  transition:background-image .18s var(--ease), box-shadow .22s var(--ease),
+             color .18s var(--ease), transform .07s ease, border-color .18s var(--ease);
+}
+/* brilho interno no topo, tipo cápsula de vidro */
+#btn::before{
+  content:"";
+  position:absolute;
+  top:1px; left:3px; right:3px;
+  height:48%;
+  border-radius:20px 20px 70% 70%;
+  background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+  pointer-events:none;
+}
+#btn svg{
+  position:relative; z-index:2;
+  flex:0 0 auto;
+  width:15px; height:15px;
+  transition:transform .2s var(--ease);
+}
+#btn .btn-label{
+  position:relative; z-index:2;
+  min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#btn:hover:not(:disabled){
+  background-image:linear-gradient(180deg,#ffc48e 0%,#ff9a52 52%,#f97b22 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -2px 5px rgba(130,50,0,.36),
+    0 1px 2px rgba(0,0,0,.8),
+    0 8px 28px -6px rgba(255,138,60,.9),
+    0 18px 52px -14px rgba(255,138,60,.65);
+}
+#btn:hover:not(:disabled) svg{ transform:translateY(1px); }
+#btn:active:not(:disabled){
+  transform:translateY(1px);
+  background-image:linear-gradient(180deg,#e87a2a 0%,#f28a3a 60%,#ffa463 100%);
+  box-shadow:
+    inset 0 2px 6px rgba(110,42,0,.5),
+    inset 0 -1px 0 rgba(255,255,255,.25),
+    0 1px 2px rgba(0,0,0,.8),
+    0 3px 12px -4px rgba(255,138,60,.5),
+    0 8px 26px -12px rgba(255,138,60,.35);
+}
+#btn:focus-visible{
+  outline:none;
+  border-color:#ffd0a8;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    0 0 0 2px #080808,
+    0 0 0 4px rgba(255,138,60,.95),
+    0 8px 26px -8px rgba(255,138,60,.7);
+}
+/* desligado: cápsula apagada */
+#btn:disabled{
+  background-image:linear-gradient(180deg,#1c1c1c 0%,#161616 60%,#111111 100%);
+  border-color:#242424;
+  color:#595959;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 -1px 0 rgba(0,0,0,.6),
+    0 1px 2px rgba(0,0,0,.7);
+  cursor:default !important;
+}
+#btn:disabled::before{ opacity:.22; }
+#btn:disabled svg{ opacity:.4; }
+
+/* ---------- barra: cápsula de carga (Recharge) ---------- */
+#barra{
+  position:relative;
+  height:14px;
+  border-radius:7px;
+  background-color:#080808;
+  border:1px solid #000000;
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,1),
+    inset 0 -1px 0 rgba(255,255,255,.06),
+    0 1px 0 rgba(255,255,255,.045);
+  overflow:visible;
+  transition:box-shadow .3s var(--ease);
+}
+
+/* fio interno que dá a sensação de cápsula de vidro */
+#barra::before{
+  content:"";
+  position:absolute;
+  top:1px; left:8px; right:8px;
+  height:1px;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.16) 22%,
+    rgba(255,255,255,.16) 78%,
+    rgba(255,255,255,0) 100%);
+  pointer-events:none;
+  z-index:3;
+}
+
+/* o líquido */
+#barra > i{
+  display:block;
+  position:relative;
+  height:100%;
+  width:0;
+  border-radius:6px 3px 3px 6px;
+  overflow:hidden;
+  background-color:var(--amber);
+  background-image:linear-gradient(180deg,
+    #ffd3ae 0%,
+    #ff9a4a 24%,
+    #f97b1f 56%,
+    #d85a08 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    inset 0 -2px 5px rgba(120,42,0,.55),
+    0 0 18px 2px rgba(255,138,60,.75),
+    0 0 38px 4px rgba(255,138,60,.35);
+  transition:width .18s var(--ease);
+}
+
+/* thesta incandescente: o ponto onde o líquido está empurrando */
+#barra > i::after{
+  content:"";
+  position:absolute;
+  top:-4px; right:-2px; bottom:-4px;
+  width:18px;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 58% 50%,
+    rgba(255,255,255,.95) 0%,
+    rgba(255,226,190,.9) 22%,
+    rgba(255,138,60,.6) 48%,
+    rgba(255,138,60,0) 74%);
+  filter:blur(1.5px);
+  animation:testa 1.15s ease-in-out infinite;
+  pointer-events:none;
+  z-index:2;
+}
+
+/* reflexo especular que corre pela superfície */
+#barra > i::before{
+  content:"";
+  position:absolute;
+  top:1px; left:2px; right:2px;
+  height:42%;
+  border-radius:6px 6px 40% 40%;
+  background:linear-gradient(180deg,
+    rgba(255,255,255,.62) 0%,
+    rgba(255,255,255,.16) 55%,
+    rgba(255,255,255,0) 100%);
+  pointer-events:none;
+}
+
+/* halo que vaza para fora da peça (o "spill" do Recharge) */
+#barra::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:-6px;
+  height:14px;
+  border-radius:50%;
+  background:radial-gradient(58% 100% at 50% 0%,
+    rgba(255,138,60,.26) 0%,
+    rgba(255,138,60,0) 74%);
+  filter:blur(6px);
+  pointer-events:none;
+  animation:spill 3.4s ease-in-out infinite;
+}
+
+/* estado opcional que o JS pode acionar */
+#barra.carregando{
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,1),
+    inset 0 -1px 0 rgba(255,255,255,.06),
+    0 0 16px -2px rgba(255,138,60,.5);
+}
+
+@keyframes testa{
+  0%,100%{ opacity:.72; }
+  50%{ opacity:1; }
+}
+
+/* ---------- botão em estado de carga ---------- */
+/* o estado de carga desliga o botão (#btn:disabled escurece o fundo),
+   por isso o texto precisa ir para âmbar claro em vez do marrom da cápsula acesa */
+#btn.carregando,
+#btn.carregando:disabled{
+  color:#ffab6e;
+  background-image:linear-gradient(180deg,#26170e 0%,#1b120c 60%,#120d0a 100%);
+  border-color:#5c3617;
+  box-shadow:
+    inset 0 1px 0 rgba(255,171,110,.16),
+    inset 0 -1px 0 rgba(0,0,0,.6),
+    0 1px 2px rgba(0,0,0,.7),
+    0 6px 20px -8px rgba(255,138,60,.45);
+  cursor:progress !important;
+}
+#btn.carregando:disabled::before{ opacity:.3; }
+#btn.carregando:disabled svg{ opacity:.9; }
+#btn.carregando svg{
+  animation:gira 1s linear infinite;
+}
+@keyframes gira{
+  from{ transform:rotate(0deg); }
+  to{ transform:rotate(360deg); }
+}
+/* varredura de luz contínua enquanto baixa */
+#btn.carregando::after{
+  content:"";
+  position:absolute;
+  top:0; left:0;
+  width:32%; height:100%;
+  background:linear-gradient(100deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.5) 50%,
+    rgba(255,255,255,0) 100%);
+  transform:translateX(-120%) skewX(-14deg);
+  animation:varre .95s linear infinite;
+  pointer-events:none;
+}
+@keyframes varre{
+  from{ transform:translateX(-120%) skewX(-14deg); }
+  to{ transform:translateX(420%) skewX(-14deg); }
+}
+
+/* ---------- status ---------- */
+#status{
+  position:relative;
+  margin:0;
+  padding:9px 11px 9px 27px;
+  font-size:11.5px;
+  line-height:1.45;
+  color:#909090;
+  background-color:#0a0a0a;
+  border:1px solid #1b1b1b;
+  border-radius:12px;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.9);
+  overflow-wrap:anywhere;
+  animation:enterStatus .24s var(--ease) both;
+}
+#status::before{
+  content:"";
+  position:absolute;
+  left:11px; top:14px;
+  width:5px; height:5px;
+  border-radius:50%;
+  background:#3a3a3a;
+  transition:background-color .2s ease, box-shadow .2s ease;
+}
+#status:empty{ display:none; }
+
+@keyframes pulseOk{
+  0%{ box-shadow:inset 0 2px 5px rgba(0,0,0,.9), 0 0 0 0 rgba(143,227,184,.35); }
+  100%{ box-shadow:inset 0 2px 5px rgba(0,0,0,.9), 0 0 0 8px rgba(143,227,184,0); }
+}
+@keyframes pulseErro{
+  0%{ box-shadow:inset 0 2px 5px rgba(0,0,0,.9), 0 0 0 0 rgba(255,123,114,.35); }
+  100%{ box-shadow:inset 0 2px 5px rgba(0,0,0,.9), 0 0 0 8px rgba(255,123,114,0); }
+}
+
+#status.ok{
+  color:var(--ok);
+  background-color:#08120d;
+  border-color:#173226;
+  animation:enterStatus .24s var(--ease) both, pulseOk .8s ease-out .24s 1;
+}
+#status.ok::before{
+  background:var(--ok);
+  box-shadow:0 0 8px 1px rgba(143,227,184,.85);
+}
+
+#status.erro{
+  color:var(--erro);
+  background-color:#170b0a;
+  border-color:#3a1a17;
+  animation:enterStatus .24s var(--ease) both, pulseErro .8s ease-out .24s 1;
+}
+#status.erro::before{
+  background:var(--erro);
+  box-shadow:0 0 8px 1px rgba(255,123,114,.85);
+}
+
+/* ---------- acessibilidade ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+}
+
+/* ---------- pasta de downloads ---------- */
+.field-dir{ margin-top:16px; }
+.inp-dir input{ padding-right:4px; text-overflow:ellipsis; }
+#pasta{ color:#b9b9b9; cursor:default; }
+#pasta::placeholder{ color:#5e5e5e; }
+#btnPasta{
+  flex:0 0 auto;
+  height:26px;
+  margin:0 6px 0 0;
+  padding:0 12px;
+  font-family:inherit;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.45px;
+  text-transform:uppercase;
+  color:#d8d8d8;
+  white-space:nowrap;
+  background-color:var(--raise);
+  border:1px solid #2c2c2c;
+  border-radius:13px;
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 2px 5px rgba(0,0,0,.7);
+  transition:background-color .16s var(--ease), border-color .16s var(--ease),
+             color .16s var(--ease), transform .07s ease;
+}
+#btnPasta:hover{ background-color:#242424; border-color:#3d3d3d; color:#ffffff; }
+#btnPasta:active{ background-color:#111111; transform:translateY(1px); }
+#btnPasta:focus-visible{
+  outline:none;
+  border-color:#ffd0a8;
+  box-shadow:
+    0 0 0 2px #080808,
+    0 0 0 4px rgba(255,138,60,.9);
+}
+@media (prefers-reduced-motion:reduce){ #btnPasta{ transition:none; } }
+</style>
+</head>
+<body>
+
+<div class="panel">
+
+  <header class="hd">
+    <span class="hd-dot" aria-hidden="true"></span>
+    <div class="hd-txt">
+      <h1>TikTok Downloader</h1>
+      <p>Cole o link do vídeo para começar.</p>
+    </div>
+    <button id="btnUpdate" type="button" hidden>Atualizar</button>
+  </header>
+
+  <div class="grid">
+
+    <div class="col">
+
+      <div class="field">
+        <label class="lbl" for="url">Link do vídeo</label>
+        <div class="inp">
+          <svg class="inp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.2 13.3a4.6 4.6 0 0 0 6.9.5l2.1-2.1a4.6 4.6 0 0 0-6.5-6.5l-1.2 1.2"></path>
+            <path d="M13.8 10.7a4.6 4.6 0 0 0-6.9-.5l-2.1 2.1a4.6 4.6 0 0 0 6.5 6.5l1.2-1.2"></path>
+          </svg>
+          <input id="url" type="text" placeholder="https://www.tiktok.com/@usuario/video/..." autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="field field-dir">
+        <label class="lbl" for="pasta">Pasta de downloads</label>
+        <div class="inp inp-dir">
+          <svg class="inp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 7.5a2 2 0 0 1 2-2h3.4l1.8 2h7.8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2z"></path>
+          </svg>
+          <input id="pasta" type="text" readonly placeholder="Abra um projeto salvo" aria-label="Pasta de downloads deste projeto">
+          <button id="btnPasta" type="button">Escolher…</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="side">
+      <button id="btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4v10"></path>
+          <path d="M7.6 10.4 12 14.8l4.4-4.4"></path>
+          <path d="M5 19.5h14"></path>
+        </svg>
+        <span class="btn-label">Baixar e inserir na timeline</span>
+      </button>
+
+      <div id="barra" aria-hidden="true"><i></i></div>
+
+      <div id="status" role="status" aria-live="polite"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="js/update.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
