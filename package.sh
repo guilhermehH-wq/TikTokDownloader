@@ -12,7 +12,7 @@ rm -rf "$PASTA" "$DIST/$NOME.zip"
 mkdir -p "$PASTA"
 
 cp -R "$ORIGEM/CSXS" "$ORIGEM/js" "$ORIGEM/jsx" "$ORIGEM/index.html" "$PASTA/"
-cp "$ORIGEM/install.sh" "$ORIGEM/instalar.command" "$ORIGEM/LEIA-ME.txt" "$PASTA/"
+cp "$ORIGEM/install.sh" "$ORIGEM/instalar.command" "$ORIGEM/LEIA-ME.txt" "$ORIGEM/COMO-INSTALAR.txt" "$PASTA/"
 chmod +x "$PASTA/install.sh" "$PASTA/instalar.command"
 
 find "$PASTA" -name ".DS_Store" -delete

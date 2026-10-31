@@ -1,35 +1,38 @@
-TikTok Downloader - instalacao (macOS)
-======================================
+TikTok Downloader — leia-me (macOS)
+===================================
 
-1. Tenha o Homebrew: https://brew.sh
-2. Abra o Terminal e rode:
-     brew install yt-dlp ffmpeg
-3. De duplo clique em "instalar.command".
-   (Se o macOS disser que nao pode abrir: clique com o botao direito > Abrir,
-    ou rode no Terminal: xattr -dr com.apple.quarantine <pasta>)
-4. Feche e abra o Premiere Pro.
-5. Janela > Extensoes > TikTok Downloader
+Instalacao rapida (pkg)
+-----------------------
+1. Tenha o Homebrew (https://brew.sh) e rode:  brew install yt-dlp ffmpeg
+2. Duplo clique em TikTokDownloader-<versao>.pkg
+   (se o macOS bloquear: botao direito > Abrir > "Abrir mesmo assim")
+3. Feche e abra o Premiere Pro
+4. Janela > Extensoes > TikTok Downloader
+
+Instalacao manual (zip)
+-----------------------
+1. brew install yt-dlp ffmpeg
+2. Duplo clique em "instalar.command"
+   (se bloquear: botao direito > Abrir, ou no Terminal:
+    xattr -dr com.apple.quarantine <esta pasta>)
+3. Feche e abra o Premiere Pro
 
 Como usar
 ---------
-- Deixe o projeto salvo e uma sequencia aberta na timeline.
-- Na primeira vez, escolha a "Pasta de downloads" no painel (ela fica salva
-  para esse projeto). O padrao e Downloads_TikTok/ ao lado do .prproj.
-- Cole o link do video (https://www.tiktok.com/@usuario/video/123...).
-- Clique em "Baixar e inserir na timeline".
-- O video vai para a pasta Downloads_TikTok/ ao lado do .prproj, entra no bin
-  "TikTok" e e inserido no playhead (V1 + A1).
+- Projeto salvo + sequencia aberta na timeline.
+- Primeira vez: escolha a "Pasta de downloads" no painel (fica salva por
+  projeto). Padrao: Downloads_TikTok/ ao lado do .prproj.
+- Cole o link e clique em "Baixar e inserir na timeline".
+    TikTok  -> video em V1 + A1 (bin "TikTok") + musica do video em id.wav
+    YouTube -> so o audio em id.wav, inserido na A1 (bin "Musicas")
 
-Video privado / da sua conta
-----------------------------
-O painel tenta ler os cookies do navegador, mas o macOS bloqueia essa leitura
-por padrao. Duas saidas:
+Atualizacoes
+------------
+Aparece o botao "Atualizar X" no painel quando sai versao nova. Clique e
+reinicie o Premiere.
 
-a) Ajustes do Sistema > Privacidade e Seguranca > Acesso Total ao Disco:
-   adicione o Adobe Premiere Pro e reinicie o Premiere.
-b) Instale a extensao "Get cookies.txt LOCALLY" no Chrome, exporte os cookies
-   do tiktok.com e use a opcao "Usar arquivo cookies.txt" no painel.
-
-Se o download falhar
---------------------
-Atualize o yt-dlp:  brew upgrade yt-dlp
+Se falhar
+---------
+- Erro 403: brew upgrade yt-dlp
+- Video indisponivel: privado, removido ou bloqueado na regiao
+- yt-dlp nao encontrado: falta o Homebrew / brew install yt-dlp ffmpeg

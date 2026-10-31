@@ -1,0 +1,86 @@
+TIKTOK DOWNLOADER — COMO INSTALAR (macOS)
+=========================================
+
+O QUE E
+Painel para o Adobe Premiere Pro. Cola um link e ele baixa:
+
+  TikTok  -> video em V1 + A1, mais a musica do video em .wav (48 kHz)
+  YouTube -> so o audio em .wav, direto na trilha A1
+
+Os arquivos ficam na pasta de downloads do projeto (padrao: Downloads_TikTok
+ao lado do .prproj).
+
+VOCE PRECISA DE
+- Um Mac (Apple Silicon ou Intel)
+- Adobe Premiere Pro 2021 ou mais novo
+- Internet
+- Homebrew (o instalador do painel nao instala sozinho; passo 1 abaixo)
+
+
+PASSO 1 — HOMEBREW (so se ainda nao tiver)
+------------------------------------------
+Abra o Terminal (Cmd + Espaco, digite "Terminal") e cole:
+
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+Aperte Enter e espere. Pode pedir a senha do Mac.
+Ja tem Homebrew? Pule para o passo 2.
+
+
+PASSO 2 — YT-DLP E FFMPEG
+-------------------------
+No Terminal:
+
+  brew install yt-dlp ffmpeg
+
+Espere terminar (~100 MB).
+
+
+PASSO 3 — INSTALAR O PAINEL
+---------------------------
+1. Baixe o arquivo TikTokDownloader-<versao>.pkg
+2. Duplo clique no arquivo.
+3. Se o Mac avisar que e de "desenvolvedor nao identificado": botao direito no
+   arquivo > Abrir > "Abrir mesmo assim" (ou Ajustes do Sistema > Privacidade e
+   Seguranca > "Abrir assim mesmo").
+4. Siga o instalador. Ele pede a senha do Mac e instala so para o seu usuario.
+
+
+PASSO 4 — ABRIR NO PREMIERE
+---------------------------
+1. Feche o Premiere se estiver aberto e abra de novo.
+2. Menu Janela (Window) > Extensoes > TikTok Downloader.
+3. Se nao aparecer: rode o instalador de novo, reinicie o Premiere e confira
+   se a pasta abaixo existe:
+   ~/Library/Application Support/Adobe/CEP/extensions/com.guilherme.tiktokdl
+
+
+COMO USAR
+---------
+1. Abra um projeto SALVO (o painel usa a pasta do projeto).
+2. Abra uma sequencia na timeline.
+3. Primeira vez: clique em "Escolher..." na linha "Pasta de downloads" e
+   escolha onde salvar. Fica salvo para esse projeto.
+4. Cole o link (TikTok ou YouTube) e posicione o playhead.
+5. Clique em "Baixar e inserir na timeline".
+
+TikTok:  https://www.tiktok.com/@usuario/video/1234567890
+YouTube: https://www.youtube.com/watch?v=XXXXXXXXXXX
+
+
+ATUALIZACOES
+------------
+Quando sair versao nova, aparece um botao laranja "Atualizar X" no canto do
+painel. Clique, espere e reinicie o Premiere. Nao precisa reinstalar nada.
+
+
+SE DER ERRO
+-----------
+- "yt-dlp nao encontrado": falta o passo 1/2 (Homebrew + brew install).
+- Erro 403 / "Unable to download": atualize o yt-dlp:
+    brew upgrade yt-dlp
+- "Video indisponivel": o video e privado, foi removido ou esta bloqueado na
+  sua regiao.
+- "Esse link e a pagina inicial ou um perfil": copie o link de DENTRO do video
+  (Compartilhar > Copiar link).
+- Painel em branco: feche o Premiere, rode o instalador de novo e reabra.

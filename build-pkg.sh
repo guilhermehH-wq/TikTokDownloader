@@ -18,6 +18,7 @@ mkdir -p "$STAGE/Library/Application Support/TikTokDownloader/payload" "$SCRIPTS
 export COPYFILE_DISABLE=1
 cp -R "$ORIGEM/CSXS" "$ORIGEM/js" "$ORIGEM/jsx" "$ORIGEM/index.html" \
       "$ORIGEM/install.sh" "$ORIGEM/instalar.command" "$ORIGEM/LEIA-ME.txt" \
+      "$ORIGEM/COMO-INSTALAR.txt" \
       "$STAGE/Library/Application Support/TikTokDownloader/payload/"
 find "$STAGE" -name ".DS_Store" -delete
 find "$STAGE" -name "._*" -delete
